@@ -15,11 +15,9 @@ def main():
     Solvent.Set_Up_FF(run_orca=True, local = False)
     OPLS.Assign_OPLS(Solvent, ChelpG = False)
     Solvent_System = System.System([Solvent], [N], 200.0, Name)
-    Solvent_System.Gen_Rand()
+    #Solvent_System.Gen_Rand()
     Solvent_System.Write_LAMMPS_Data()
     Solvent_System.Run_Lammps_Init()
-    
+
 
 if __name__=='__main__': main()
-
-

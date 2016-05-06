@@ -36,7 +36,7 @@ class Molecule(object):
     def __init__(self, File_Name):
         File = open(File_Name,'r') # File_Name is the name of an .xyz file outputted by Avogadro
         File_Lines = File.readlines()
-        
+
         # Define Instance Variables
         self.Name = File_Name.split('.xyz')[0]
         self.N = int(File_Lines[0].strip('\n')) # Integer
@@ -50,7 +50,7 @@ class Molecule(object):
         self.Mol_ID = 0
         self.Missing_Dihedrals = 0
         self.UnConverged = False # Unconverged Orca Optimization
-        
+
         print "Setting up molecule"
         print "Molecule Name:", self.Name
         print self.N, "Atoms in ", self.Name
@@ -58,40 +58,40 @@ class Molecule(object):
         for i in range(self.N):
             Line = File_Lines[2+i]
             Line = Line.strip('\n').split()
-            Element = Line[0]
-            Position = np.array( [ float(Line[1]), float(Line[2]), float(Line[3]) ], dtype=float )
+            Element = Line[1] # TODO NEVER COMMIT THIS
+            Position = np.array( [ float(Line[2]), float(Line[3]), float(Line[4]) ], dtype=float )
             self.Atom_List[i] = Atom.Atom(Position, Element, i+1) # Instantiate Atom_List with Atom objects
             self.MW += self.Atom_List[i].Mass
-        
+
         print "Initial XYZ Coordinates:\n"
         for Atom_Obj in self.Atom_List:
             print Atom_Obj.Element, Atom_Obj.Position
         print "----------------------------------"
-        
+
         # Compute center of Mass
         Mass_Weighted_Sum = np.zeros(3,dtype=float)
         for Atom_Obj in self.Atom_List:
             Mass_Weighted_Sum += Atom_Obj.Position*Atom_Obj.Mass
             self.MW += Atom_Obj.Mass
-        
+
         print "Molecular Weight is ", self.MW, "Grams/Mole"
         self.COM = Mass_Weighted_Sum/self.MW
         self.COM = np.asarray(self.COM)
         print "COM is", self.COM
-        
+
         Mass_Weighted_Sum = 0.0
         for Atom_Obj in self.Atom_List:
             Mass_Weighted_Sum += Atom_Obj.Mass*((Atom_Obj.Position[0] - self.COM[0])**2 + (Atom_Obj.Position[1] - self.COM[1])**2  + (Atom_Obj.Position[2] - self.COM[2])**2 )
         Rg2 = Mass_Weighted_Sum/self.MW
         self.Rg = np.sqrt(Rg2)
         print "The Radius of Gyration is", self.Rg
-                
-            
-        
+
+
+
         # Zero COM
         for Atom_Obj in self.Atom_List:
             Atom_Obj.Position -= self.COM
-        
+
         self.COM -= self.COM
         print self.COM
         return
@@ -100,12 +100,12 @@ class Molecule(object):
         # This adjusts the center of mass and gives the molecule a random orientation
         x = random.random()*2*3.1415
         y = random.random()*2*3.1415
-        
+
         C1 = np.cos(x)
         S1 = np.sin(x)
         C2 = np.cos(y)
         S2 = np.cos(y)
-        
+
         for Atom_Obj in self.Atom_List:
             # First rotation
             xt = Atom_Obj.Position[0]
@@ -117,7 +117,7 @@ class Molecule(object):
             #zt = Atom_Obj.Position[2]
             #Atom_Obj.Position[0] = xt*C2 - zt*S2
             #Atom_Obj.Position[2] = xt*S2 + zt*C2
-            
+
             Atom_Obj.Position += self.COM
         return
 
@@ -125,7 +125,7 @@ class Molecule(object):
     def Set_Up_FF(self, run_orca=True, local= True):
         if run_orca:
             print "Setting up Orca input script"
-        
+
             # Write Orca Input File
             File_Name = self.Name + ".inp"
             File = open(File_Name, 'w')
@@ -136,12 +136,12 @@ class Molecule(object):
             File.write('*')
             File.close()
             Finished = False
-            
+
             File_Out = self.Name + ".out"
             if local:
                 #Run subprocess on local machine
-                
-                
+
+
                 os.system('mkdir Orca')
                 os.system('mv %s ./Orca' % File_Name)
                 os.chdir('./Orca')
@@ -150,8 +150,8 @@ class Molecule(object):
                     File = open(File_Out,'r')
                 except:
                     os.system('orca %s > %s' %(File_Name, File_Out)) # Run Orca Job
-            
-            
+
+
             else:
                 print "Running Orca Geometry Optimization on Comet"
                 cmd = "mkdir " + Configure.Comet_Path % self.Name
@@ -165,7 +165,7 @@ class Molecule(object):
                 s = template.format(Comet_Path=Path, Orca_Path = Configure.Orca_Path, name = self.Name )
                 with open(submit ,"w") as f:
                     f.write(s)
-            
+
                 # Copy Files over  to Comet
                 os.system( Configure.c2c % (submit, self.Name))
                 os.system( Configure.c2c % (File_Name, self.Name))
@@ -195,16 +195,16 @@ class Molecule(object):
                         print "Sleeping process", i, "miniutes"
                         time.sleep(600)
                         i += 10
-    
-    
-            
-    
-    
+
+
+
+
+
         else:
             os.chdir('./Orca')
-        
+
         File_Out = self.Name + ".out"
-        
+
         # Extract info from Orca output file
         Orca_File = open(File_Out, 'r')
         File_Lines = Orca_File.readlines()
@@ -253,10 +253,10 @@ class Molecule(object):
                             Redundant = False
                             Found = True
                             print k
-            
+
                 if Found:
                     break
-                
+
                 elif Line[0] == "Redundant" and (File_Lines[i+2].strip('\n').split()[1] == "Optimized"):
                     print "Found redundant internal coordinates"
                     Redundant = True
@@ -292,14 +292,14 @@ class Molecule(object):
                                     self.Dihedral_List.append(Dihedral.Dihedral(self.Atom_List[Master1_ID],self.Atom_List[Master2_ID], self.Atom_List[Slave1_ID], self.Atom_List[Slave2_ID], Dihedral_Eq))
                         except:
                             Redundant = False
-    
+
                 if Line[0] == "CHELPG" and len(Line) == 2 and not self.UnConverged:
                     for j in range(self.N):
                         Chelp_Line = File_Lines[i+2+j].split()
                         index = int(Chelp_Line[0])
                         charge = float(Chelp_Line[3])
                         self.Atom_List[index].Charge = charge
-                
+
                 if Line[0] == "CARTESIAN" and Line[2] == "(ANGSTROEM)":
                     for j in range(self.N):
                         XYZ_Line = File_Lines[i+2+j].split()
@@ -309,13 +309,13 @@ class Molecule(object):
                 continue
         print "Redundant Internal Coordinates and ChelpG partial charges Extracted"
         print "Bond_List = ", len(self.Bond_List)
-        
+
         if not run_orca:
             os.chdir('..')
-        
+
         if local:
             os.chdir('..')
-        
+
         print "Optimized XYZ Coordinates:\n"
         for Atom_Obj in self.Atom_List:
             # Finds OPLS Types and Classes
@@ -353,7 +353,7 @@ class Molecule(object):
             for Atom_Obj in self.Atom_List:
                 File.write('%s %.5f %.5f %.5f\n' % ( Atom_Obj.Element, Atom_Obj.Position[0], Atom_Obj.Position[1],Atom_Obj.Position[2]))
             File.write('*')
-            
+
             File.close()
             Finished = False
             File_Out = self.Name + "_Dih_%d.out" % i
@@ -372,10 +372,10 @@ class Molecule(object):
                 s = template.format(Comet_Path=Path, Orca_Path = Configure.Orca_Path, name = Dihedral_Name )
             with open(submit ,"w") as f:
                 f.write(s)
-            
+
             # Copy Files over  to Comet
             Dihedral_Path = self.Name + "/Dihedral_%d" % i
-            
+
             os.system( Configure.c2c % (submit, Dihedral_Path))
             os.system( Configure.c2c % (File_Name, Dihedral_Path))
             # Run job
@@ -384,8 +384,8 @@ class Molecule(object):
                 File = open(File_Out,'r')
             except:
                 subprocess.call(["ssh",Configure.Comet_Login, Configure.SBATCH % (Dihedral_Path, submit)])
-            
-            
+
+
             # Continuously check to see if job is finished
             j = 0
             while not Finished:
@@ -411,10 +411,10 @@ class Molecule(object):
                 os.chdir("Dihedral_%d" % i)
             except:
                 os.chdir("Dihedral_%d" % i)
-            
+
             # Copy XYZ trajectory to working directory
             XYZ_File = self.Name +  "_Dih_%d" % i + ".*.xyz"
-            
+
 
             os.system( Configure.c2l % (Dihedral_Path, XYZ_File))
             File_List = glob.glob(XYZ_File)
@@ -431,10 +431,10 @@ class Molecule(object):
                 print index
                 if index < 37 and File_Lines[-1] != ">\n":
                     Traj_File.write('>\n')
-                        
+
             Traj_File.close()
             MP2_Name = "MP2"
-            
+
             # Prepare new submit script
             with open(subtemp) as f:
                 template = f.read()
@@ -474,11 +474,11 @@ class Molecule(object):
                 print "Sleeping process", j, "miniutes"
                 time.sleep(600)
                 j  += 10
-            
+
             #Copy back over output and store the results for the MP2 relaxed energy scan
 
             os.chdir("..")
-                
+
 
         return
 # Functions Operating on sets of Molecule objects
@@ -487,10 +487,10 @@ def Assign_Lammps(Moltemp_List):
     """
         Function that inputs a list of molecule templates. It searches through all the atoms, bonds, angles etc. to find the unique types of interactions
         present in an arbitrary system object made of molecule templates.
-        
+
         returns a list of unique params for writing to a LAMMPS data file. these are lists defined such that the i-1 element corresponds to the ith LAMMPS_Type
     """
-    
+
     print "Finding unique Atoms"
     Unique_Atoms = []
     Atom_Params = []
@@ -577,13 +577,3 @@ def Assign_Lammps(Moltemp_List):
 
 
     return Atom_Params, Bond_Params, Angle_Params, Dihedral_Params, Improper_Params
-
-
-
-
-
-
-
-
-
-

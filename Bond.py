@@ -27,7 +27,3 @@ class Bond(object):
         self.Lammps_Type = 0
         self.System_ID = 0
         return
-
-
-
-

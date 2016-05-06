@@ -17,7 +17,7 @@ class Atom(object):
         Bond_List = list of atom objects
         Atom_ID = 0
     """
-    def __init__(self, Position, Element, Atom_ID):
+    def __init__(self, Position, Element, Atom_ID, txyz):
         self.Position = Position # Numpy[3,float]
         self.Element = Element # String
         self.Charge = 0.0 # Float
@@ -30,10 +30,29 @@ class Atom(object):
         self.Atom_ID = Atom_ID
         self.LAMMPS_Type = 0
         self.System_ID = 0
+        self.txyz = txyz
         #self.COM_Position = np.zeros(3,dtype=float)
         self.Image_Flags = np.zeros(3,dtype=int)
         self.Unwrapped_Position = np.zeros(3,dtype=float)
         return
+
+    """def __init__(self, Position, Element, Atom_ID, Bond_List):
+        self.Position = Position # Numpy[3,float]
+        self.Element = Element # String
+        self.Charge = 0.0 # Float
+        self.Bond_List = Bond_List # List of atom objects
+        self.OPLS_Type = 0
+        self.OPLS_Class = 0
+        self.Mass = Mass_Dict[self.Element]
+        self.Sigma = 0.0
+        self.Epsilon = 0.0
+        self.Atom_ID = Atom_ID
+        self.LAMMPS_Type = 0
+        self.System_ID = 0
+        #self.COM_Position = np.zeros(3,dtype=float)
+        self.Image_Flags = np.zeros(3,dtype=int)
+        self.Unwrapped_Position = np.zeros(3,dtype=float)
+        return"""
 
 
 # Functions operating on sets of Atom objects
@@ -90,7 +109,7 @@ def Find_OPLS_ID(Atom, Fullerene):
                 # Furan C3
                 Atom.OPLS_Type = 509
                 Atom.OPLS_Class = 87
-    
+
         elif len(Temp_Bond_List) == 4:
             if Temp_Bond_List == ['C', 'C', 'H', 'H']:
                 # Alkane C-CH2-C
@@ -127,8 +146,16 @@ def Find_OPLS_ID(Atom, Fullerene):
                 # 1-methylimidazole
                 Atom.OPLS_Type = 603
                 Atom.OPLS_Class = 13
-                    
-                    
+            elif Temp_Bond_List == ['H','H','H','H']:
+                # Methane Ch4
+                Atom.OPLS_Type = 83
+                Atom.OPLS_Class = 13
+            elif Temp_Bond_List == ['C','H','H','O']:
+                # Ethanol UA?????????
+                Atom.OPLS_Type = 23
+                Atom.OPLS_Class = 2
+
+
 
     elif Atom.Element == "H":
         Bonded_Atom = Atom.Bond_List[0]
@@ -165,16 +192,22 @@ def Find_OPLS_ID(Atom, Fullerene):
 
     elif Atom.Element == "O":
         Temp_Bond_List = sorted([ Atomobj.Element for Atomobj in Atom.Bond_List])
+        print Temp_Bond_List
         if len(Temp_Bond_List) == 2:
             if Temp_Bond_List == ['C', 'C']:
                 # Dialkyl Ether
                 Atom.OPLS_Type = 408
                 Atom.OPLS_Class = 20
+            if Temp_Bond_List == ['C','H']:
+                # SOME SHIT PROBABLY WRONG
+                Atom.OPLS_Type = 109
+                Atom.OPLS_Type = 5
         elif len(Temp_Bond_List) ==  1:
             if Temp_Bond_List == ['C']:
                 #   Ester C=O
                 Atom.OPLS_Type = 407
                 Atom.OPLS_Class = 4
+
     elif Atom.Element == "S":
         Temp_Bond_List = sorted([ Atomobj.Element for Atomobj in Atom.Bond_List])
         if len(Temp_Bond_List) == 2:
@@ -190,12 +223,4 @@ def Find_OPLS_ID(Atom, Fullerene):
                 Atom.OPLS_Type = 847
                 Atom.OPLS_Class = 107
 
-
-
     return Fullerene
-
-
-
-
-
-
